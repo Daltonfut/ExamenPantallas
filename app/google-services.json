@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "128969980669",
+    "project_id": "examenpantallas",
+    "storage_bucket": "examenpantallas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:128969980669:android:dd3a6003986f797d351c94",
+        "android_client_info": {
+          "package_name": "com.example.examenpantallas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAzdfAuz5sdeVgE1RawYdoXPVcgmm9gxWg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
