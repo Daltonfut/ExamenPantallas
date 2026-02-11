@@ -3,20 +3,11 @@ package com.example.examenpantallas.mvvm
 import androidx.lifecycle.ViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.firestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-
-data class Jugador(
-    var id: String = "",
-    val nombre: String = "",
-    val posicion: String = "",
-    val numero: String = "",
-    val nacionalidad: String = "",
-    val imagenUrl: String = ""
-)
 
 data class LoginUiState(
     val email: String = "",
@@ -116,7 +107,7 @@ class NuevoJugadorViewModel : ViewModel() {
             posicion = uiStateValue.posicion,
             numero = uiStateValue.numero,
             nacionalidad = uiStateValue.nacionalidad,
-            imagenUrl = uiStateValue.imagenUrl
+            URL = uiStateValue.imagenUrl
         )
 
         jugadoresCollection.add(nuevoJugador)

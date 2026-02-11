@@ -16,8 +16,6 @@ import com.example.examenpantallas.mvvm.HomeViewModel
 import com.example.examenpantallas.mvvm.Jugador
 import com.google.firebase.auth.FirebaseAuth
 
-private val Jugador.imagenUrl: Any?
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Home(auth: FirebaseAuth, onAddJugador: () -> Unit) {
@@ -50,9 +48,9 @@ fun JugadorItem(jugador: Jugador) {
             .padding(8.dp)
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
-            if (jugador.imagenUrl.isNotEmpty()) {
+            if (jugador.URL.isNotEmpty()) {
                 AsyncImage(
-                    model = jugador.imagenUrl,
+                    model = jugador.URL,
                     contentDescription = "Imagen de ${jugador.nombre}",
                     modifier = Modifier.size(80.dp)
                 )
