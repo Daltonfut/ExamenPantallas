@@ -75,7 +75,7 @@ fun NuevoJugador(onBack: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Guardar Jugador")
+                Text("Agregar jugador")
             }
         }
     }
