@@ -1,64 +1,129 @@
 package com.example.examenpantallas.mvvm
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import com.google.firebase.firestore.ktx.firestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+
+data class Jugador(
+    var id: String = "",
+    val nombre: String = "",
+    val posicion: String = "",
+    val numero: String = "",
+    val nacionalidad: String = "",
+    val imagenUrl: String = ""
+)
+
+data class LoginUiState(
+    val email: String = "",
+    val password: String = "",
+    val loginError: String? = null,
+    val loginSuccess: Boolean = false
+)
+
+data class NuevoJugadorUiState(
+    val nombre: String = "",
+    val posicion: String = "",
+    val numero: String = "",
+    val nacionalidad: String = "",
+    val imagenUrl: String = ""
+)
+
 
 class LoginViewModel : ViewModel() {
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
-
-    private val _email = mutableStateOf("")
-    val email: State<String> = _email
-
-    private val _password = mutableStateOf("")
-    val password: State<String> = _password
-
-    private val _loginError = mutableStateOf<String?>(null)
-    val loginError: State<String?> = _loginError
-
-    private val _loginSuccess = mutableStateOf(false)
-    val loginSuccess: State<Boolean> = _loginSuccess
+    private val _uiState = MutableStateFlow(LoginUiState())
+    val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun onEmailChange(email: String) {
-        _email.value = email
+        _uiState.update { it.copy(email = email) }
     }
+
     fun onPasswordChange(password: String) {
-        _password.value = password
+        _uiState.update { it.copy(password = password) }
     }
 
     fun clearLoginError() {
-        _loginError.value = null
+        _uiState.update { it.copy(loginError = null) }
     }
-    suspend fun login() {
-        try {
-            auth.signInWithEmailAndPassword(_email.value, _password.value).await()
-            _loginSuccess.value = true
-        } catch (e: Exception) {
-            _loginError.value = "Usuario o contraseña incorrectos"
+
+    fun login(auth: FirebaseAuth) {
+        val email = _uiState.value.email
+        val password = _uiState.value.password
+
+        if (email.isBlank() || password.isBlank()) {
+            _uiState.update { it.copy(loginError = "El email y la contraseña no pueden estar vacíos.") }
+            return
         }
+
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnSuccessListener {
+                _uiState.update { it.copy(loginSuccess = true) }
+            }
+            .addOnFailureListener { e ->
+                _uiState.update { it.copy(loginError = e.message ?: "Fallo de autenticación.") }
+            }
     }
 }
-class HomeViewModel : ViewModel() {
-    private val db = FirebaseFirestore.getInstance()
 
-    private val _jugadores = mutableStateOf<List<Jugador>>(emptyList())
-    val jugadores: State<List<Jugador>> = _jugadores
+class HomeViewModel : ViewModel() {
+    private val db = Firebase.firestore
+    private val jugadoresCollection = db.collection("Jugadores")
+
+    private val _jugadores = MutableStateFlow<List<Jugador>>(emptyList())
+    val jugadores: StateFlow<List<Jugador>> = _jugadores.asStateFlow()
 
     init {
         obtenerJugadores()
     }
 
     private fun obtenerJugadores() {
-        db.collection("Jugadores").addSnapshotListener { snapshot, error ->
+        jugadoresCollection.addSnapshotListener { snapshot, error ->
             if (error != null) {
                 return@addSnapshotListener
             }
             if (snapshot != null) {
-                _jugadores.value = snapshot.toObjects(Jugador::class.java)
+                val jugadoresList = snapshot.documents.mapNotNull { doc ->
+                    val jugador = doc.toObject(Jugador::class.java)
+                    jugador?.id = doc.id
+                    jugador
+                }
+                _jugadores.value = jugadoresList
             }
         }
+    }
+}
+class NuevoJugadorViewModel : ViewModel() {
+    private val db = Firebase.firestore
+    private val jugadoresCollection = db.collection("Jugadores")
+
+    private val _uiState = MutableStateFlow(NuevoJugadorUiState())
+    val uiState: StateFlow<NuevoJugadorUiState> = _uiState.asStateFlow()
+
+    fun onNombreChange(nombre: String) { _uiState.update { it.copy(nombre = nombre) } }
+    fun onPosicionChange(posicion: String) { _uiState.update { it.copy(posicion = posicion) } }
+    fun onNumeroChange(numero: String) { _uiState.update { it.copy(numero = numero) } }
+    fun onNacionalidadChange(nacionalidad: String) { _uiState.update { it.copy(nacionalidad = nacionalidad) } }
+    fun onImagenUrlChange(imagenUrl: String) { _uiState.update { it.copy(imagenUrl = imagenUrl) } }
+
+    fun addJugador(onSuccess: () -> Unit) {
+        val uiStateValue = _uiState.value
+        val nuevoJugador = Jugador(
+            nombre = uiStateValue.nombre,
+            posicion = uiStateValue.posicion,
+            numero = uiStateValue.numero,
+            nacionalidad = uiStateValue.nacionalidad,
+            imagenUrl = uiStateValue.imagenUrl
+        )
+
+        jugadoresCollection.add(nuevoJugador)
+            .addOnSuccessListener {
+                onSuccess()
+            }
+            .addOnFailureListener {
+            }
     }
 }

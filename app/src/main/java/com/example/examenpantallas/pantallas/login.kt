@@ -9,26 +9,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.examenpantallas.R
 import com.example.examenpantallas.mvvm.LoginViewModel
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
 
 @Composable
 fun Login(auth: FirebaseAuth, onLoginSuccess: () -> Unit) {
     val viewModel: LoginViewModel = viewModel()
-    val email by viewModel.email
-    val password by viewModel.password
-    val loginError by viewModel.loginError
-    val loginSuccess by viewModel.loginSuccess
-    val scope = rememberCoroutineScope()
+    val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(loginSuccess) {
-        if (loginSuccess) {
+    LaunchedEffect(uiState.loginSuccess) {
+        if (uiState.loginSuccess) {
             onLoginSuccess()
         }
     }
@@ -46,13 +40,11 @@ fun Login(auth: FirebaseAuth, onLoginSuccess: () -> Unit) {
         )
 
         Spacer(modifier = Modifier.height(24.dp))
-
         Text(text = "Inicia sesión", fontSize = 24.sp, style = MaterialTheme.typography.headlineMedium)
-
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = email,
+            value = uiState.email,
             onValueChange = { viewModel.onEmailChange(it) },
             label = { Text("Email") },
             modifier = Modifier.fillMaxWidth()
@@ -60,36 +52,34 @@ fun Login(auth: FirebaseAuth, onLoginSuccess: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
-            value = password,
+            value = uiState.password,
             onValueChange = { viewModel.onPasswordChange(it) },
             label = { Text("Contraseña") },
-            visualTransformation = if (password.isEmpty()) PasswordVisualTransformation() else VisualTransformation.None,
+            visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
-            onClick = {
-                scope.launch {
-                    viewModel.login(auth)
-                }
-            },
+            onClick = { viewModel.login(auth) },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF27D21F))
         ) {
             Text("Login")
         }
 
-        if (loginError != null) {
+        if (uiState.loginError != null) {
             AlertDialog(
                 onDismissRequest = { viewModel.clearLoginError() },
-                title = { Text("Usuario o contraseña incorrectos") },
-                text = { Text(loginError ?: "Usuario o contraseña incorrectos") },
+                title = { Text("Error") },
+                text = { Text(uiState.loginError ?: "") },
                 confirmButton = {
                     Button(onClick = { viewModel.clearLoginError() }) {
                         Text("Aceptar")
                     }
-                }) }
+                }
+            )
+        }
     }
 }
