@@ -15,10 +15,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.examenpantallas.R
 import com.example.examenpantallas.mvvm.LoginViewModel
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 
 @Composable
-fun Login(onLoginSuccess: () -> Unit) {
+fun Login(auth: FirebaseAuth, onLoginSuccess: () -> Unit) {
     val viewModel: LoginViewModel = viewModel()
     val email by viewModel.email
     val password by viewModel.password
@@ -41,7 +42,7 @@ fun Login(onLoginSuccess: () -> Unit) {
         Image(
             painter = painterResource(id = R.drawable.logoprograma),
             contentDescription = "Logo",
-            modifier = Modifier.size(150.dp)
+            modifier = Modifier.size(120.dp)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -71,7 +72,7 @@ fun Login(onLoginSuccess: () -> Unit) {
         Button(
             onClick = {
                 scope.launch {
-                    viewModel.login()
+                    viewModel.login(auth)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -83,8 +84,8 @@ fun Login(onLoginSuccess: () -> Unit) {
         if (loginError != null) {
             AlertDialog(
                 onDismissRequest = { viewModel.clearLoginError() },
-                title = { Text("Error de inicio de sesión") },
-                text = { Text(loginError ?: "Ha ocurrido un error") },
+                title = { Text("Usuario o contraseña incorrectos") },
+                text = { Text(loginError ?: "Usuario o contraseña incorrectos") },
                 confirmButton = {
                     Button(onClick = { viewModel.clearLoginError() }) {
                         Text("Aceptar")

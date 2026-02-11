@@ -56,6 +56,7 @@ fun JugadorItem(jugador: Jugador) {
             Text(text = "Nombre: ${jugador.nombre}")
             Text(text = "Posición: ${jugador.posicion}")
             Text(text = "Número: ${jugador.numero}")
+            Text(text = "Nacionalidad ${jugador.nacionalidad}")
         }
     }
 }
