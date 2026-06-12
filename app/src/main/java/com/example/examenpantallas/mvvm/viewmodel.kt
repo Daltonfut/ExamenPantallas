@@ -24,97 +24,69 @@ data class NuevoJugadorUiState(
     val imagenUrl: String = ""
 )
 
-
 class LoginViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
-    fun onEmailChange(email: String) {
-        _uiState.update { it.copy(email = email) }
-    }
-
-    fun onPasswordChange(password: String) {
-        _uiState.update { it.copy(password = password) }
-    }
-
-    fun clearLoginError() {
-        _uiState.update { it.copy(loginError = null) }
-    }
+    fun onEmailChange(e: String) { _uiState.update { it.copy(email = e) } }
+    fun onPasswordChange(p: String) { _uiState.update { it.copy(password = p) } }
+    fun clearLoginError() { _uiState.update { it.copy(loginError = null) } }
 
     fun login(auth: FirebaseAuth) {
         val email = _uiState.value.email
-        val password = _uiState.value.password
-
-        if (email.isBlank() || password.isBlank()) {
-            _uiState.update { it.copy(loginError = "El email y la contraseña no pueden estar vacíos.") }
+        val pass = _uiState.value.password
+        if (email.isBlank() || pass.isBlank()) {
+            _uiState.update { it.copy(loginError = "Campos vacios") }
             return
         }
-
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnSuccessListener {
-                _uiState.update { it.copy(loginSuccess = true) }
-            }
-            .addOnFailureListener { e ->
-                _uiState.update { it.copy(loginError = e.message ?: "Fallo de autenticación.") }
-            }
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnSuccessListener { _uiState.update { it.copy(loginSuccess = true) } }
+            .addOnFailureListener { _uiState.update { it.copy(loginError = "Error al entrar") } }
     }
 }
 
 class HomeViewModel : ViewModel() {
     private val db = Firebase.firestore
-    private val jugadoresCollection = db.collection("Jugadores")
-
+    private val col = db.collection("Jugadores")
     private val _jugadores = MutableStateFlow<List<Jugador>>(emptyList())
     val jugadores: StateFlow<List<Jugador>> = _jugadores.asStateFlow()
 
     init {
-        obtenerJugadores()
-    }
-
-    private fun obtenerJugadores() {
-        jugadoresCollection.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                return@addSnapshotListener
-            }
-            if (snapshot != null) {
-                val jugadoresList = snapshot.documents.mapNotNull { doc ->
-                    val jugador = doc.toObject(Jugador::class.java)
-                    jugador?.id = doc.id
-                    jugador
+        col.addSnapshotListener { snap, _ ->
+            if (snap != null) {
+                _jugadores.value = snap.documents.mapNotNull { d ->
+                    d.toObject(Jugador::class.java)?.apply { id = d.id }
                 }
-                _jugadores.value = jugadoresList
             }
         }
     }
+
+    fun eliminar(id: String) {
+        if (id.isNotEmpty()) col.document(id).delete()
+    }
 }
+
 class NuevoJugadorViewModel : ViewModel() {
     private val db = Firebase.firestore
-    private val jugadoresCollection = db.collection("Jugadores")
-
+    private val col = db.collection("Jugadores")
     private val _uiState = MutableStateFlow(NuevoJugadorUiState())
     val uiState: StateFlow<NuevoJugadorUiState> = _uiState.asStateFlow()
 
-    fun onNombreChange(nombre: String) { _uiState.update { it.copy(nombre = nombre) } }
-    fun onPosicionChange(posicion: String) { _uiState.update { it.copy(posicion = posicion) } }
-    fun onNumeroChange(numero: String) { _uiState.update { it.copy(numero = numero) } }
-    fun onNacionalidadChange(nacionalidad: String) { _uiState.update { it.copy(nacionalidad = nacionalidad) } }
-    fun onImagenUrlChange(imagenUrl: String) { _uiState.update { it.copy(imagenUrl = imagenUrl) } }
+    fun onNombreChange(v: String) { _uiState.update { it.copy(nombre = v) } }
+    fun onPosicionChange(v: String) { _uiState.update { it.copy(posicion = v) } }
+    fun onNumeroChange(v: String) { _uiState.update { it.copy(numero = v) } }
+    fun onNacionalidadChange(v: String) { _uiState.update { it.copy(nacionalidad = v) } }
+    fun onImagenUrlChange(v: String) { _uiState.update { it.copy(imagenUrl = v) } }
 
-    fun addJugador(onSuccess: () -> Unit) {
-        val uiStateValue = _uiState.value
-        val nuevoJugador = Jugador(
-            nombre = uiStateValue.nombre,
-            posicion = uiStateValue.posicion,
-            numero = uiStateValue.numero,
-            nacionalidad = uiStateValue.nacionalidad,
-            URL = uiStateValue.imagenUrl
+    fun add(onOk: () -> Unit) {
+        val s = _uiState.value
+        val j = Jugador(
+            nombre = s.nombre,
+            posicion = s.posicion,
+            numero = s.numero.toIntOrNull() ?: 0,
+            nacionalidad = s.nacionalidad,
+            imagen = s.imagenUrl
         )
-
-        jugadoresCollection.add(nuevoJugador)
-            .addOnSuccessListener {
-                onSuccess()
-            }
-            .addOnFailureListener {
-            }
+        col.add(j).addOnSuccessListener { onOk() }
     }
 }
